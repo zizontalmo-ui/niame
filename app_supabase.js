@@ -18,22 +18,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ---------------------- Google 로그인 ----------------------
 function setupGoogleSignIn() {
-    // Google 초기화
     window.google?.accounts?.id?.initialize({
         client_id: '687333388884-8r6qst40747b2d9ce41gcq8q3im3fl2g.apps.googleusercontent.com',
         callback: handleGoogleSignIn
     });
-    // 버튼 렌더링 시도
     renderGoogleButton();
 }
 
-// 로그인 버튼 렌더링
 function renderGoogleButton() {
     const section = document.getElementById('userSection');
     if (!currentUser) {
         section.innerHTML = `<div class="g_id_signin" data-type="standard"></div>`;
-
-        // Google API 준비될 때까지 대기
         const waitForGoogle = setInterval(() => {
             if (window.google?.accounts?.id) {
                 window.google.accounts.id.renderButton(
@@ -46,7 +41,6 @@ function renderGoogleButton() {
     }
 }
 
-// Google 로그인 콜백
 async function handleGoogleSignIn(response) {
     try {
         const { data, error } = await supabase.auth.signInWithIdToken({
@@ -79,11 +73,10 @@ async function checkUser() {
     });
 }
 
-// 사용자 UI 렌더링
 function renderUser() {
     const section = document.getElementById('userSection');
     if (!currentUser) {
-        renderGoogleButton(); // 로그인 안 됐으면 버튼 표시
+        renderGoogleButton();
     } else {
         const photoURL = currentUser.user_metadata?.avatar_url || '';
         const displayName = currentUser.user_metadata?.full_name || '익명';
@@ -107,7 +100,7 @@ async function logout() {
     loadPosts();
 }
 
-// ---------------------- 파일명 정리 함수 ----------------------
+// ---------------------- 파일명 정리 ----------------------
 function sanitizeFileName(filename) {
     return filename
         .normalize("NFD")
@@ -117,7 +110,10 @@ function sanitizeFileName(filename) {
 
 // ---------------------- 이미지 업로드 ----------------------
 async function uploadImage() {
-    if (!currentUser) { alert('로그인 후 업로드하세요.'); return; }
+    if (!currentUser) { 
+        alert('로그인 후 업로드하세요.'); 
+        return; 
+    }
 
     const fileInput = document.getElementById('fileInput');
     const titleInput = document.getElementById('titleInput');
@@ -125,44 +121,51 @@ async function uploadImage() {
     const tagsInput = document.getElementById('tagsInput');
 
     const file = fileInput.files[0];
-    if (!file) { alert('사진을 선택하세요.'); return; }
-    if (!titleInput.value.trim()) { alert('제목을 입력하세요.'); return; }
+    if (!file) { 
+        alert('사진을 선택하세요.'); 
+        return; 
+    }
+    if (!titleInput.value.trim()) { 
+        alert('제목을 입력하세요.'); 
+        return; 
+    }
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    uploadBtn.textContent = '업로드 중...';
+    uploadBtn.disabled = true;
 
     try {
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.textContent = '업로드 중...';
-        uploadBtn.disabled = true;
-
-        // 안전한 파일명 생성
         const safeName = sanitizeFileName(file.name);
         const fileName = `${Date.now()}_${safeName}`;
 
-        // Supabase 스토리지 업로드
+        // ----------------- Supabase 스토리지 업로드 -----------------
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('images')
-            .upload(fileName, file);
+            .upload(fileName, file, { upsert: true });
 
         if (uploadError) throw uploadError;
 
-        // 퍼블릭 URL 가져오기
-        const { data: { publicUrl } } = supabase.storage
+        // ----------------- 퍼블릭 URL 가져오기 -----------------
+        const { data: urlData, error: urlError } = supabase.storage
             .from('images')
             .getPublicUrl(fileName);
 
-        // posts 테이블에 데이터 삽입
-        const { error } = await supabase.from('posts').insert([{
+        if (urlError) throw urlError;
+        const publicUrl = urlData.publicUrl;
+
+        // ----------------- posts 테이블에 데이터 삽입 -----------------
+        const { error: insertError } = await supabase.from('posts').insert([{
             title: titleInput.value.trim(),
-            keywords: keywordsInput.value.split(',').map(s=>s.trim()).filter(s=>s),
-            tags: tagsInput.value.split(' ').map(s=>s.trim()).filter(s=>s),
+            keywords: keywordsInput.value.split(',').map(s => s.trim()).filter(s => s),
+            tags: tagsInput.value.split(' ').map(s => s.trim()).filter(s => s),
             image_url: publicUrl,
             user_name: currentUser.user_metadata?.full_name || '익명',
             user_photo: currentUser.user_metadata?.avatar_url || '',
             user_id: currentUser.id
         }]);
 
-        if (error) throw error;
+        if (insertError) throw insertError;
 
-        // 입력창 초기화
         fileInput.value = '';
         titleInput.value = '';
         keywordsInput.value = '';
@@ -173,14 +176,12 @@ async function uploadImage() {
 
     } catch (error) {
         console.error('업로드 실패:', error);
-        alert('업로드에 실패했습니다.');
+        alert('업로드에 실패했습니다. 콘솔을 확인하세요.');
     } finally {
-        const uploadBtn = document.getElementById('uploadBtn');
         uploadBtn.textContent = '업로드';
         uploadBtn.disabled = false;
     }
 }
-
 
 // ---------------------- 게시물 로드 & 렌더링 ----------------------
 async function loadPosts() {
@@ -294,7 +295,6 @@ function setupEventListeners() {
     document.getElementById('searchInput')?.addEventListener('input', loadPosts);
     document.getElementById('sortSelect')?.addEventListener('change', loadPosts);
 
-    // 실시간 구독 (원래 있던 코드)
     supabase.channel('posts').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
         loadPosts();
     }).subscribe();

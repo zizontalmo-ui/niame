@@ -22,10 +22,25 @@
             class="w-full h-full object-contain rounded-full shadow"
           />
         </div>
-        <h1 class="font-bold text-xl text-gray-800">블롭피쉬 실시간 갤러리</h1>
+        <!-- 제목 클릭 시 새로고침 -->
+        <h1
+          id="homeTitle"
+          class="font-bold text-xl text-gray-800 cursor-pointer"
+        >
+          딘딘블롭 실시간 갤러리
+        </h1>
       </div>
-      <!-- 로그인/사용자 영역 -->
-      <div id="userSection"></div>
+
+      <!-- 로그인/사용자 영역 + 매점 버튼 -->
+      <div class="flex items-center gap-2">
+        <div id="userSection"></div>
+        <button
+          id="buySnackBtn"
+          class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition text-sm"
+        >
+          블롭피쉬 먹이주기
+        </button>
+      </div>
     </header>
 
     <main class="max-w-5xl mx-auto p-4">
@@ -89,5 +104,58 @@
         <tbody id="gallery"></tbody>
       </table>
     </main>
+
+    <!-- 홈 제목 클릭 시 새로고침 + 매점 버튼 팝업 -->
+    <script>
+      // 홈 제목 새로고침
+      document.getElementById("homeTitle")?.addEventListener("click", () => {
+        location.reload();
+      });
+
+      // 매점 사주기 버튼 팝업
+      const snackBtn = document.getElementById("buySnackBtn");
+
+      snackBtn.addEventListener("click", () => {
+        const popup = document.createElement("div");
+        popup.className =
+          "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
+        popup.innerHTML = `
+        <div class="bg-white p-10 rounded shadow-lg max-w-4xl w-full text-center relative">
+  <h1 class="text-[150%] font-bold leading-tight">
+    이 가엾은 블롭이에게 먹거리를 후원해주세요...
+  </h1>
+  <img src="./assets/sillyblob.jpg" alt="sillyblob" class="w-[350px] mx-auto py-3">
+  <h3 class="text-lg font-bold my-6">블롭피쉬 사육사 계좌번호</h3>
+  
+  <p id="accountNumber" 
+     class="text-gray-800 font-mono mb-6 cursor-pointer select-all text-xl">
+    1908-9595-5553
+  </p>
+  
+  <button id="closePopup" 
+          class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition">
+    닫기
+  </button>
+</div>
+
+      `;
+        document.body.appendChild(popup);
+
+        const accountDiv = document.getElementById("accountNumber");
+        accountDiv.addEventListener("click", () => {
+          navigator.clipboard.writeText(accountDiv.textContent).then(() => {
+            alert("계좌번호가 복사되었습니다!");
+          });
+        });
+
+        document.getElementById("closePopup").addEventListener("click", () => {
+          popup.remove();
+        });
+
+        popup.addEventListener("click", (e) => {
+          if (e.target === popup) popup.remove();
+        });
+      });
+    </script>
   </body>
 </html>
