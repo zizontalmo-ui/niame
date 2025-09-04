@@ -189,7 +189,10 @@ async function loadPosts() {
         const searchQuery = document.getElementById('searchInput')?.value?.toLowerCase() || '';
         const sortOption = document.getElementById('sortSelect')?.value || 'newest';
 
-        let query = supabase.from('posts').select('*');
+        let query = supabase.from('posts').select(`
+    *,
+    comments(count)
+`);
 
         switch (sortOption) {
             case 'newest': query = query.order('created_at', { ascending: false }); break;
@@ -200,11 +203,25 @@ async function loadPosts() {
         const { data: posts, error } = await query;
         if (error) throw error;
 
-        const filteredPosts = searchQuery
-            ? posts.filter(post => (post.title + ' ' + (post.tags?.join(' ')||'') + ' ' + (post.keywords?.join(' ')||'')).toLowerCase().includes(searchQuery))
-            : posts;
+        // Supabase에서 가져온 posts에 댓글 수 붙이기
+const enrichedPosts = posts.map(p => ({
+    ...p,
+    comment_count: p.comments?.[0]?.count || 0
+}));
 
-        renderGallery(filteredPosts);
+// 검색어 필터 적용
+const filteredPosts = searchQuery
+    ? enrichedPosts.filter(post =>
+        (post.title + ' ' +
+         (post.tags?.join(' ') || '') + ' ' +
+         (post.keywords?.join(' ') || '')
+        ).toLowerCase().includes(searchQuery)
+      )
+    : enrichedPosts;
+
+// 갤러리 렌더링
+renderGallery(filteredPosts);
+
 
     } catch (error) {
         console.error('데이터 로드 실패:', error);
@@ -243,11 +260,20 @@ function renderGallery(posts) {
                 </div>
             </td>
             <td class="p-2 text-center">
-                <button class="likeBtn text-red-600 hover:scale-110 transition-transform" onclick="toggleLike('${post.id}', ${post.likes})">
-                    ❤️ <span>${post.likes}</span>
-                </button>
-            </td>
-            <td class="p-2 text-center text-sm">${new Date(post.created_at).toLocaleString()}</td>
+    <button class="likeBtn text-red-600 hover:scale-110 transition-transform" 
+            onclick="toggleLike('${post.id}', ${post.likes})">
+        ❤️ <span>${post.likes}</span>
+    </button>
+</td>
+<td class="p-2 text-center">
+    <button class="commentBtn text-blue-600 hover:scale-110 transition-transform" 
+            onclick="showComments('${post.id}')">
+        💬
+    </button>
+    <div class="text-xs text-gray-500">${post.comment_count || 0}</div>
+</td>
+<td class="p-2 text-center text-sm">${new Date(post.created_at).toLocaleString()}</td>
+
         `;
         gallery.appendChild(tr);
     });
@@ -288,6 +314,69 @@ async function showImageModal(postId) {
         console.error('모달 로드 실패:', error);
     }
 }
+
+async function showComments(postId) {
+    try {
+        // 댓글 불러오기
+        const { data: comments, error } = await supabase
+            .from('comments')
+            .select('*')
+            .eq('post_id', postId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // 팝업 생성
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+        modal.onclick = e => { if (e.target === modal) modal.remove(); };
+
+        modal.innerHTML = `
+            <div class="bg-white max-w-lg w-full rounded shadow-lg p-4 relative">
+                <h2 class="text-lg font-bold mb-2">댓글</h2>
+                <div id="commentList" class="max-h-64 overflow-y-auto mb-3">
+                    ${comments.map(c => `
+                        <div class="border-b py-2">
+                            <div class="text-sm font-semibold">${c.user_name || '익명'}</div>
+                            <div class="text-xs text-gray-500">${new Date(c.created_at).toLocaleString()}</div>
+                            <p class="text-sm">${c.content}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <textarea id="newComment" class="w-full border rounded p-2 mb-2" placeholder="댓글 입력..."></textarea>
+                <button id="sendComment" class="bg-blue-600 text-white px-4 py-2 rounded">등록</button>
+                <button class="absolute top-2 right-2 text-gray-500" onclick="this.closest('.fixed').remove()">✕</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // 댓글 등록 이벤트
+        document.getElementById('sendComment').addEventListener('click', async () => {
+            const content = document.getElementById('newComment').value.trim();
+            if (!content) return alert('댓글을 입력하세요.');
+
+            const { error: insertError } = await supabase.from('comments').insert([{
+                post_id: postId,
+                user_id: currentUser?.id,
+                user_name: currentUser?.user_metadata?.full_name || '익명',
+                user_photo: currentUser?.user_metadata?.avatar_url || '',
+                content
+            }]);
+
+            if (insertError) {
+                alert('댓글 등록 실패');
+                return;
+            }
+
+            modal.remove();
+            showComments(postId); // 새로고침
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+window.showComments = showComments;
+
 
 // ---------------------- 이벤트 리스너 ----------------------
 function setupEventListeners() {
