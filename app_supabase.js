@@ -389,6 +389,66 @@ function setupEventListeners() {
     }).subscribe();
 }
 
+// ---------------------- 갤러리/카페 화면 전환 ----------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const gallerySection = document.getElementById('gallerySection');
+  const cafeSection = document.getElementById('cafeSection');
+
+  document.getElementById('galleryModeBtn').addEventListener('click', () => {
+    gallerySection.classList.remove('hidden');
+    cafeSection.classList.add('hidden');
+  });
+
+  document.getElementById('cafeModeBtn').addEventListener('click', () => {
+    gallerySection.classList.add('hidden');
+    cafeSection.classList.remove('hidden');
+    loadCafePosts();
+  });
+
+  document.getElementById('postCafeBtn').addEventListener('click', postCafeMessage);
+});
+
+// ---------------------- 블롭 카페 기능 ----------------------
+async function postCafeMessage() {
+  const nickname = document.getElementById('cafeNickname').value.trim() || '익명 블롭';
+  const content = document.getElementById('cafeContent').value.trim();
+  if (!content) return alert('내용을 입력하세요!');
+
+  const { error } = await supabase.from('cafe_posts').insert([{ nickname, content }]);
+  if (error) return alert('등록 실패 😢');
+  document.getElementById('cafeContent').value = '';
+  loadCafePosts();
+}
+
+async function loadCafePosts() {
+  const container = document.getElementById('cafePosts');
+  container.innerHTML = '<p class="text-gray-400 text-center">로딩 중...</p>';
+
+  const { data: posts, error } = await supabase
+    .from('cafe_posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    container.innerHTML = '<p class="text-red-500 text-center">불러오기 실패 ❌</p>';
+    return;
+  }
+
+  if (!posts.length) {
+    container.innerHTML = '<p class="text-gray-500 text-center">아직 아무 글이 없습니다 🐠</p>';
+    return;
+  }
+
+  container.innerHTML = posts.map(p => `
+    <div class="border p-3 rounded shadow-sm bg-gray-50">
+      <p class="font-semibold">${p.nickname}</p>
+      <p class="text-gray-700 whitespace-pre-line">${p.content}</p>
+      <p class="text-xs text-gray-400 text-right mt-1">${new Date(p.created_at).toLocaleString()}</p>
+    </div>
+  `).join('');
+}
+
+
 // ---------------------- 전역 함수 ----------------------
 window.toggleLike = toggleLike;
 window.showImageModal = showImageModal;

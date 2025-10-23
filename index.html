@@ -44,65 +44,112 @@
     </header>
 
     <main class="max-w-5xl mx-auto p-4">
-      <!-- 업로드 섹션 -->
-      <section
-        id="uploadSection"
-        class="hidden bg-white p-4 rounded shadow mb-6"
-      >
-        <input type="file" id="fileInput" class="mb-2 w-full" />
-        <input
-          type="text"
-          id="titleInput"
-          placeholder="제목"
-          class="w-full border p-2 mb-2 rounded"
-        />
-        <input
-          type="text"
-          id="keywordsInput"
-          placeholder="키워드, 쉼표 구분"
-          class="w-full border p-2 mb-2 rounded"
-        />
-        <input
-          type="text"
-          id="tagsInput"
-          placeholder="#태그"
-          class="w-full border p-2 mb-2 rounded"
-        />
+      <div id="modeSelect" class="flex justify-center gap-4 mb-6">
         <button
-          id="uploadBtn"
-          class="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          id="galleryModeBtn"
+          class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600"
         >
-          업로드
+          🖼 이미지 갤러리
         </button>
-      </section>
-
-      <!-- 검색 & 정렬 -->
-      <div class="flex gap-2 mb-4">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="검색어"
-          class="flex-1 border p-2 rounded"
-        />
-        <select id="sortSelect" class="border p-2 rounded">
-          <option value="newest">최신순</option>
-          <option value="likes">좋아요순</option>
-          <option value="title">제목순</option>
-        </select>
+        <button
+          id="cafeModeBtn"
+          class="bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700"
+        >
+          💬 블롭 카페
+        </button>
       </div>
 
-      <!-- 갤러리 -->
-      <table class="w-full border-t border-gray-300 bg-white shadow rounded">
-        <thead class="bg-gray-50">
-          <tr class="border-b border-gray-300">
-            <th class="p-2 w-12">번호</th>
-            <th class="p-2 text-left">제목</th>
-            <th class="p-2 w-20">좋아요</th>
-            <th class="p-2 w-32">작성일</th>
-          </tr>
-        </thead>
-        <tbody id="gallery"></tbody>
-      </table>
+      <!-- 갤러리 영역-->
+      <section id="gallerySection">
+        <!-- 업로드 섹션 -->
+        <section
+          id="uploadSection"
+          class="hidden bg-white p-4 rounded shadow mb-6"
+        >
+          <input type="file" id="fileInput" class="mb-2 w-full" />
+          <input
+            type="text"
+            id="titleInput"
+            placeholder="제목"
+            class="w-full border p-2 mb-2 rounded"
+          />
+          <input
+            type="text"
+            id="keywordsInput"
+            placeholder="키워드, 쉼표 구분"
+            class="w-full border p-2 mb-2 rounded"
+          />
+          <input
+            type="text"
+            id="tagsInput"
+            placeholder="#태그"
+            class="w-full border p-2 mb-2 rounded"
+          />
+          <button
+            id="uploadBtn"
+            class="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          >
+            업로드
+          </button>
+        </section>
+
+        <!-- 검색 & 정렬 -->
+        <div class="flex gap-2 mb-4">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="검색어"
+            class="flex-1 border p-2 rounded"
+          />
+          <select id="sortSelect" class="border p-2 rounded">
+            <option value="newest">최신순</option>
+            <option value="likes">좋아요순</option>
+            <option value="title">제목순</option>
+          </select>
+        </div>
+
+        <!-- 갤러리 -->
+        <table class="w-full border-t border-gray-300 bg-white shadow rounded">
+          <thead class="bg-gray-50">
+            <tr class="border-b border-gray-300">
+              <th class="p-2 w-12">번호</th>
+              <th class="p-2 text-left">제목</th>
+              <th class="p-2 w-20">좋아요</th>
+              <th class="p-2 w-32">작성일</th>
+            </tr>
+          </thead>
+          <tbody id="gallery"></tbody>
+        </table>
+      </section>
+
+      <!-- ✅ 블롭 카페 영역 -->
+      <section id="cafeSection" class="hidden bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">💬 블롭 카페</h2>
+
+        <!-- 글쓰기 -->
+        <div class="mb-4">
+          <input
+            id="cafeNickname"
+            type="text"
+            placeholder="닉네임"
+            class="border p-2 rounded w-full mb-2"
+          />
+          <textarea
+            id="cafeContent"
+            placeholder="오늘의 이야기를 남겨보세요..."
+            class="border p-2 rounded w-full h-24"
+          ></textarea>
+          <button
+            id="postCafeBtn"
+            class="bg-pink-600 text-white px-4 py-2 rounded w-full mt-2 hover:bg-pink-700 transition"
+          >
+            작성하기
+          </button>
+        </div>
+
+        <!-- 글 목록 -->
+        <div id="cafePosts" class="space-y-4"></div>
+      </section>
     </main>
 
     <!-- 홈 제목 클릭 시 새로고침 + 매점 버튼 팝업 -->
